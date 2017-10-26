@@ -52,6 +52,28 @@ interface TrustedHTML {
 This could be called as `TrustedHTML.createFromLiteral("Literal string!")`, but calling
 `TrustedHTML.createFromLiteral(formField.value)` would throw a `TypeError`.
 
+Also ideally, we'd allow literals to be combined with other literals (which is commonplace
+in codebases with agreed-upon line-length limits). That is, we'd allow the following:
+
+```js
+TrustedHTML.createFromLiteral("A marginally longer literal string that seems to keep going " +
+                              "and going and going and going. Wow, what a long string.");
+```
+
+Equally ideally, we'd keep track of a string's literalness. That is, we'd allow the following:
+
+```js
+let a = "Literal string!";
+TrustedHTML.createFromLiteral(a);
+
+let b = "Another literal!";
+TrustedHTML.createFromLiteral(a + b);
+
+let c = a + b;
+TrustedHTML.createFromLiteral(c);
+```
+
+
 ## Prior Art
 
 *   [`goog.string.Const`](https://google.github.io/closure-library/api/goog.string.Const.html) is
