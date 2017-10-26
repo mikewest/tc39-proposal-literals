@@ -23,7 +23,8 @@ The Closure compiler can distinguish between strings that are embedded into a pr
 those that are the result of some operation (method call, property getter, etc). It enforces constraints
 on [`goog.string.Const`](https://google.github.io/closure-library/api/goog.string.Const.html) which ensure
 that such objects can only be constructed from literals, which a) is apparently quite common in production
-code at Google, and b) is straightforward to audit, and therefore provably safe.
+code at Google, and b) is provably safe (attacker cannot control the value of the literal without injecting
+into the script creating such literal).
 
 ## Proposal
 
