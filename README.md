@@ -118,6 +118,14 @@ accept template strings. That is, `trustedUrlizer(formField.value)` would fail, 
     from a `fromLiteral` construction mechanism, as the anecdata from Google's codebase shows that
     that mechanism is both safe and widely usable.
 
+*   __To what extent would we need to track literalness for the first proposal?__
+
+    An excellent question! I'm flexible!
+
+    One thing we _don't_ need to track would be something like using a literal as an object key.
+    That is, I'm perfectly happy treating `{ "a": "value" }` and `{ a: "value" }`, and
+    `obj["a"] = "value"` as having a value whose key is the same.
+
 ## Prior Art
 
 *   [`goog.string.Const`](https://google.github.io/closure-library/api/goog.string.Const.html) is
