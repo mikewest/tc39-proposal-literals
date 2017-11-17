@@ -41,8 +41,12 @@ process without being compiled.
 
 ## Proposals
 
-The platform could provide developers with this kind of type check in a number of ways. Two that
-seem viable are:
+I honestly don't have enough context with the innards of the language to make defensible proposals.
+Instead, I have the use cases above, and vague sketches of what I'd like to see from the platform side.
+I'd love to get feedback from folks who actually know things about the language with regard to the
+details of what the language might be willing and able to provide.
+
+With that in mind: wild speculation about what might or might not be reasonable follows!
 
 ### A Literal String Type
 
@@ -107,6 +111,24 @@ return trustedUrlizer`https://safe.test/totally/safe/url`;
 This would be pretty great iff we also had a mechanism to ensure that the tag function would _only_
 accept template strings. That is, `trustedUrlizer(formField.value)` would fail, perhaps throwing a
 `TypeError`.
+
+Daniel Ehrenberg refined this a bit in
+[mikewest/tc39-proposal-literals#2](https://github.com/mikewest/tc39-proposal-literals/issues/2),
+suggesting:
+
+> Here's the API surface I'm imagining: the first argument to a template tag would have an additional property, `literal`, which indicates whether the string provided as an argument to the template was a literal. We could make this unforgeable by representing this as an internal slot, with `literal` as an own getter, so you could do something like this to prevent an attacker from calling your template with any old object that has a `literal: true` property:
+>
+> ```js
+> // Un-monkey-patchable way to get the getter
+> let getLiteral = Object.getOwnPropertyDescriptor((_ => _)``, "literal").get; 
+> 
+> function literalString(strings, ...keys) {
+>   if (!getLiteral.call(strings)) throw new Error();
+>   return String.raw(strings, ...keys);
+> }
+> ```
+> 
+> This `literalString` template tag is like `String.raw` but would throw an exception if you don't pass a literal. It outputs a normal string, with no trace any more that it was literal. This two-liner could be the recommended way to set off a call to something that requires a literal string. It's not possible to compromise the string literal contents because the `strings` object (and its inner `raw` object) are frozen.
 
 ## FAQ
 
