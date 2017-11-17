@@ -130,6 +130,10 @@ suggesting:
 > 
 > This `literalString` template tag is like `String.raw` but would throw an exception if you don't pass a literal. It outputs a normal string, with no trace any more that it was literal. This two-liner could be the recommended way to set off a call to something that requires a literal string. It's not possible to compromise the string literal contents because the `strings` object (and its inner `raw` object) are frozen.
 
+To that, I'd only add that we'd want to be sure the literalness was exposed in a way that we could
+make use of in WebIDL so that we could enforce this kind of type-checking on built-in tag functions,
+but that would seem to naturally fall out of the proposal.
+
 ## FAQ
 
 *   __Can't folks just do this themselves with Closure, or other build-time checks?__
