@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<pre class="metadata">
+title: Template Literal Tracking
+status: proposal
+stage: 1
+location: https://littledan.github.io/tc39-proposal-literals/
+copyright: false
+contributors: Mike West, Adam Klein, Daniel Ehrenberg
+</pre>
+
+<emu-clause id="sec-introduction">
+  <h1>Introduction</h1>
+  <p>This proposal describes a mechanism for tracking literal strings in APIs by providing a mechanism that temlate tags can use to ensure that they are being called with actual literals. See <a href="https://github.com/mikewest/tc39-proposal-literals">the explainer</a> for more context.</p>
+  <p>This spec draft describes a strawman by Daniel Ehrenberg (not one of the champions) for how the semantic details could be worked out in line with <a href="https://github.com/mikewest/tc39-proposal-literals/issues/2">Issue #2</a>. It's intended as a basis for discussion, not in any way authoritative. In this draft, a new function, Array.isTemplateLiteral is provided to check the brand of template objects which resulted from literal ECMAScript code. With this design, a template literal which was included in an `eval` call will be tagged as a literal.</p>
+</emu-clause>
+
+      <!-- es6num="12.2.9.3" -->
+      <emu-clause id="sec-gettemplateobject" aoid="GetTemplateObject">
+        <h1>Runtime Semantics: GetTemplateObject ( _templateLiteral_ )</h1>
+        <p>The abstract operation GetTemplateObject is called with a Parse Node, _templateLiteral_, as an argument. It performs the following steps:</p>
+        <emu-alg>
+          1. Let _rawStrings_ be TemplateStrings of _templateLiteral_ with argument *true*.
+          1. Let _realm_ be the current Realm Record.
+          1. Let _templateRegistry_ be _realm_.[[TemplateMap]].
+          1. For each element _e_ of _templateRegistry_, do
+            1. If _e_.[[Strings]] and _rawStrings_ contain the same values in the same order, then
+              1. Return _e_.[[Array]].
+          1. Let _cookedStrings_ be TemplateStrings of _templateLiteral_ with argument *false*.
+          1. Let _count_ be the number of elements in the List _cookedStrings_.
+          1. Assert: _count_ &le; 2<sup>32</sup>-1.
+          1. Let _template_ be ! ArrayCreate(_count_<ins>, %ArrayPrototype%, &laquo; [[TemplateLiteral]] &raquo;</ins>).
+          1. Let _rawObj_ be ! ArrayCreate(_count_).
+          1. Let _index_ be 0.
+          1. Repeat, while _index_ &lt; _count_
+            1. Let _prop_ be ! ToString(_index_).
+            1. Let _cookedValue_ be the String value _cookedStrings_[_index_].
+            1. Call _template_.[[DefineOwnProperty]](_prop_, PropertyDescriptor{[[Value]]: _cookedValue_, [[Writable]]: *false*, [[Enumerable]]: *true*, [[Configurable]]: *false*}).
+            1. Let _rawValue_ be the String value _rawStrings_[_index_].
+            1. Call _rawObj_.[[DefineOwnProperty]](_prop_, PropertyDescriptor{[[Value]]: _rawValue_, [[Writable]]: *false*, [[Enumerable]]: *true*, [[Configurable]]: *false*}).
+            1. Let _index_ be _index_+1.
+          1. Perform SetIntegrityLevel(_rawObj_, `"frozen"`).
+          1. Call _template_.[[DefineOwnProperty]](`"raw"`, PropertyDescriptor{[[Value]]: _rawObj_, [[Writable]]: *false*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
+          1. Perform SetIntegrityLevel(_template_, `"frozen"`).
+          1. Append the Record{[[Strings]]: _rawStrings_, [[Array]]: _template_} to _templateRegistry_.
+          1. Return _template_.
+        </emu-alg>
+        <emu-note>
+          <p>The creation of a template object cannot result in an abrupt completion.</p>
+        </emu-note>
+        <emu-note>
+          <p>Each |TemplateLiteral| in the program code of a realm is associated with a unique template object that is used in the evaluation of tagged Templates (<emu-xref href="#sec-template-literals-runtime-semantics-evaluation"></emu-xref>). The template objects are frozen and the same template object is used each time a specific tagged Template is evaluated. Whether template objects are created lazily upon first evaluation of the |TemplateLiteral| or eagerly prior to first evaluation is an implementation choice that is not observable to ECMAScript code.</p>
+        </emu-note>
+        <emu-note>
+          <p>Future editions of this specification may define additional non-enumerable properties of template objects.</p>
+        </emu-note>
+      </emu-clause>
+
+      <!-- es6num="9.4.2.2" -->
+      <emu-clause id="sec-arraycreate" aoid="ArrayCreate">
+        <h1>ArrayCreate ( _length_ [ , _proto_ [ , _internalSlotsList_ ] ] )</h1>
+        <p>The abstract operation ArrayCreate with argument _length_ (either 0 or a positive integer) and optional argument _proto_ is used to specify the creation of new Array exotic objects. It performs the following steps:</p>
+        <emu-alg>
+          1. Assert: _length_ is an integer Number &ge; 0.
+          1. If _length_ is *-0*, set _length_ to *+0*.
+          1. If _length_&gt;2<sup>32</sup>-1, throw a *RangeError* exception.
+          1. If _proto_ is not present, set _proto_ to the intrinsic object %ArrayPrototype%.
+          1. <ins>If _internalSlotsList_ is not present, set _internalSlotsList_ to a new empty List.</ins>
+          1. Let _A_ be a newly created Array exotic object <ins>with an internal slot for each name in _internalSlotsList_</ins>.
+          1. Set _A_'s essential internal methods except for [[DefineOwnProperty]] to the default ordinary object definitions specified in <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots"></emu-xref>.
+          1. Set _A_.[[DefineOwnProperty]] as specified in <emu-xref href="#sec-array-exotic-objects-defineownproperty-p-desc"></emu-xref>.
+          1. Set _A_.[[Prototype]] to _proto_.
+          1. Set _A_.[[Extensible]] to *true*.
+          1. Perform ! OrdinaryDefineOwnProperty(_A_, `"length"`, PropertyDescriptor{[[Value]]: _length_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *false*}).
+          1. Return _A_.
+        </emu-alg>
+      </emu-clause>
+
+    <!-- es6num="22.1.2" -->
+    <emu-clause id="sec-properties-of-the-array-constructor">
+      <h1>Properties of the Array Constructor</h1>
+
+      <!-- es6num="22.1.2.1" -->
+      <emu-clause id="sec-array.isTemplateLiteral">
+        <h1>Array.isTemplateLiteral ( _array_ )</h1>
+        <p>When the `isTemplateLiteral` method is called with argument _array_, the following steps are taken:</p>
+        <emu-alg>
+          1. If _array_ has a [[TemplateLiteral]] internal slot, return *true*.
+          1. Otherwise, return *false*.
+        </emu-alg>
+      </emu-clause>
+    </emu-clause>
